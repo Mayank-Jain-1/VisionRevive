@@ -66,10 +66,17 @@ def createLrImage(image, crop_size=(1200,900), mosaic_intensity=2, noise_intensi
     return clouded_image
 
 
+def remove_outliers(folder_path):
+    img_list = os.listdir(folder_path)
+    print(len(img_list))
 
+    for img_path in img_list:
+        img = center_crop(cv2.imread(os.path.join(folder_path, img_path)))
+        if(img.shape != (900,1200,3)):
+            print(img.shape)
+            os.remove(os.path.join(folder_path,img_path))
 
-if __name__ == "__main__":
-    # Path to the folder containing high-resolution images
+def create_lr_dataset():
     input_folder = './Dataset/DIV2K_train_hr'
 
     # Output folder for storing downsampled, pixelated, and cloudy images
@@ -92,5 +99,8 @@ if __name__ == "__main__":
         cv2.imwrite(output_path, lr_image)
 
 
-# In[ ]:
+if __name__ == "__main__":
+    
+    print("Hello use any function you would want to use")
+    # Do whatever you want 
 
