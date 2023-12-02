@@ -23,25 +23,85 @@ def main():
                   num_blocks=config.NUM_BLOCKS).to(config.DEVICE)
   discriminator = Discriminator().to(config.DEVICE)
 
-  generator_optimizer = torch.optim.Adam(generator.parameters(), lr=config.GEN_LR, betas=(0.9, 0.0999))
+  gen_opt = torch.optim.Adam(generator.parameters(), lr=config.GEN_LR, betas=(0.9, 0.0999))
 
-  discriminator_optmizer = torch.optim.Adam(discriminator.parameters(), lr=config.DISC_LR, betas=(0.9, 0.0999))
+  disc_opt = torch.optim.Adam(discriminator.parameters(), lr=config.DISC_LR, betas=(0.9, 0.0999))
 
   mse = nn.MSELoss()
   bce = nn.BCEWithLogitsLoss()
-  # vgg_loss = VGGLoss()
+  # VGGLoss = VGGLoss()
 
-  train_loop(loader)
+  train_loop(loader,generator, discriminator, mse, bce, gen_opt, disc_opt)
 
 
-def train_loop(loader):
+def train_with_gan_vgg(loader, generator, discriminator,mse, bce, gen_opt, disc_opt, VGGLoss):
   loop = tqdm(loader, leave=True)
 
   for idx,(hr_img, lr_img) in enumerate(loop):
-    cv2.imwrite('./Testing/lr_image.png', lr_img[0].numpy())
-    cv2.imwrite('./Testing/hr_image.png', hr_img[0].numpy())
+    hr_img = hr_img.to(config.DEVICE)
+    lr_img = lr_img.to(config.DEVICE)
 
-    x = input("enter somethign for next")
+    # Creating the Output 4x Higher res image
+    generated = generator(lr_img)
+
+    # Dicriminator Optimization
+
+    # Discriminator Loss on Real HR IMage
+    disc_real = discriminator(hr_img)
+    disc_loss_real = bce(
+        disc_real, torch.ones_like(disc_real) - 0.1 * torch.rand_like(disc_real)
+    )
+
+    # Discriminator Loss on Generated Image
+    disc_fake = discriminator(generated.detach())
+    disc_loss_fake = bce(disc_fake, torch.zeros_like(disc_fake))
+
+    # Calculating total loss and optimizing
+    total_loss_disc = disc_loss_fake + disc_loss_real
+
+    disc_opt.zero_grad()
+    total_loss_disc.backward()
+    disc_opt.step()
+
+    # Generator Optimization 
+
+    disc_fake= discriminator(generated)
+    l2_loss = mse(generated, hr_img)
+    adversarial_loss = 1e-3 * bce(disc_fake, torch.ones_like(disc_fake))
+    vggloss = 0.006 * VGGLoss(generated, hr_img)
+    total_gen_loss = vggloss + adversarial_loss 
+
+    gen_opt.zero_grad()
+    total_gen_loss.backward()
+    gen_opt.step()
+
+
+
+
+
+    x = input("------------------------>")
+
+def train_with_mse(loader, generator, discriminator,mse, bce, gen_opt, disc_opt, VGGLoss):
+  loop = tqdm(loader, leave=True)
+
+  for idx,(hr_img, lr_img) in enumerate(loop):
+    hr_img = hr_img.to(config.DEVICE)
+    lr_img = lr_img.to(config.DEVICE)
+
+    # Creating the Output 4x Higher res image
+    generated = generator(lr_img)
+
+    # Generator Optimization 
+    l2_loss = mse(generated, hr_img)
+    total_gen_loss = l2_loss 
+
+    gen_opt.zero_grad()
+    total_gen_loss.backward()
+    gen_opt.step()
+
+    
+
+
 
 if __name__ == '__main__':
   main()

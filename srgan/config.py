@@ -5,7 +5,7 @@ import torch
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # Data Loader parameters
-BATCH_SIZE = 250
+BATCH_SIZE = 16
 NUM_WORKERS = 0
 
 # Generator hyper parameters

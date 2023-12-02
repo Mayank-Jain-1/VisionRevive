@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 import DataCreator
+import torch
 from torch.utils.data import Dataset, DataLoader
 
 class MyImageFolder(Dataset):
@@ -20,8 +21,8 @@ class MyImageFolder(Dataset):
 
     def __getitem__(self, index):
         image = np.array(cv2.imread(self.data[index]))
-        low_res = DataCreator.createLrImage(image=image, mosaic_intensity=5, noise_intensity=0.35, cloudiness=0.4)
-        high_res = DataCreator.center_crop(image=image)
+        low_res = torch.tensor(DataCreator.createLrImage(image=image, mosaic_intensity=5, noise_intensity=0.35, cloudiness=0.4)).type(torch.float32).permute((2,0,1))
+        high_res = torch.tensor(DataCreator.center_crop(image=image)).type(torch.float32).permute((2,0,1))
         return high_res, low_res
     
 
