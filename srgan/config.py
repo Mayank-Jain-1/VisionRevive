@@ -5,7 +5,7 @@ import torch
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 # DEVICE = 'cpu'
 # Data Loader parameters
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 NUM_WORKERS = 0
 
 # Generator hyper parameters
@@ -24,5 +24,5 @@ DISC_CHK = './models/disc_chk'
 
 
 EPOCHS = 100
-LEARNING_RATE = 0.01
-LOAD = True
+LEARNING_RATE = 1e-4
+LOAD = False

@@ -21,7 +21,7 @@ def main():
       num_workers=config.NUM_WORKERS,
   )
   
-  torch.manual_seed(42)
+  torch.manual_seed(49)
 
   generator = Generator(num_channels=config.NUM_CHANNELS,
                   num_blocks=config.NUM_BLOCKS).to(config.DEVICE)
@@ -37,7 +37,7 @@ def main():
   if config.LOAD == True:
     utils.load_checkpoint("./models/gen_chk/latest_gen.pth.tar",generator, gen_opt, config.LEARNING_RATE)
 
-  for epoch in range(1,config.EPOCHS+1):
+  for epoch in range(0,config.EPOCHS+1):
     train_with_mse(loader, generator, mse, gen_opt, epoch)
 
 
@@ -60,22 +60,25 @@ def train_with_mse(loader, generator, mse, gen_opt, epoch):
     # Generator Optimization 
     gen_opt.zero_grad()
     
-    l2_loss.backward()
+    # l2_loss.backward()
+    # gen_opt.step()
+
+    scaler.scale(l2_loss).backward()
     scaler.step(gen_opt)
     scaler.update()
     torch.cuda.empty_cache()
 
     end = time.time()
-
     print(f"Batch Time  = {end - start} s")
 
-    save_idx = 5
-    if idx%5 == 0:
+    save_idx = 3
+    if idx%save_idx == 0:
       with torch.inference_mode():
+        print(generated[0][0][:10])
         cv2.imwrite(f"./Training_Results/Generated/{epoch}_epoch_{idx}_batch_res.png", generated[0].permute((1,2,0)).to('cpu').numpy()*255)
-        cv2.imwrite(f"./Training_Results/Truth/{epoch}_epoch_{idx}_batch_truth.png", hr_img[0].permute((1,2,0)).to('cpu').numpy())
+        cv2.imwrite(f"./Training_Results/Truth/{epoch}_epoch_{idx}_batch_truth.png", hr_img[0].permute((1,2,0)).to('cpu').numpy()*255)
 
-        utils.save_checkpoint(generator, gen_opt, f"{config.GEN_CHK}/mse_{epoch}_epoch_{idx//save_idx}_gen.pth.tar")
+      utils.save_checkpoint(generator, gen_opt, f"{config.GEN_CHK}/mse_{epoch}_epoch_{idx//save_idx}_gen.pth.tar")
 
 
 def train_with_gan_vgg(loader, generator, discriminator,mse, bce, gen_opt, disc_opt, VGGLoss):

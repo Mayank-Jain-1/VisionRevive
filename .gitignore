@@ -1,4 +1,14 @@
-/images
-Dataset
+
+srgan/Dataset/*
+
+!srgan/Dataset/TrainingSamples
+
 .ipynb_checkpoints
+
 /dcp/dehazedImages
+
+__pycache__
+
+Testing
+
+Training_Results
