@@ -77,10 +77,12 @@ def remove_outliers(folder_path):
             os.remove(os.path.join(folder_path,img_path))
 
 def create_lr_dataset():
-    input_folder = './Dataset/DIV2K_train_hr'
+    input_folder = './Dataset/DIV2K_train_HR'
 
     # Output folder for storing downsampled, pixelated, and cloudy images
-    output_folder = './Dataset/DIV2K_lr_5'
+    cropped_folder = './Dataset/DIV2K_train_hr_cropped'
+    output_folder = './Dataset/DIV2K_train_lr'
+    os.makedirs(cropped_folder, exist_ok=True)
     os.makedirs(output_folder, exist_ok=True)
 
     # Desired parameters
@@ -92,15 +94,19 @@ def create_lr_dataset():
     for filename in os.listdir(input_folder):
         input_image_path = os.path.join(input_folder, filename)
         original_image = cv2.imread(input_image_path)
+        hr_cropped = center_crop(original_image)
         lr_image = createLrImage(original_image, mosaic_intensity=5, noise_intensity=0.35, cloudiness=0.4)
+        
 
-        output_filename = f"{filename.split('_')[0]}_lr.png"
+        output_filename = f"{filename.split('_')[0]}"
         output_path = os.path.join(output_folder, output_filename)
+        
+        cv2.imwrite(os.path.join('./Dataset/DIV2K_train_hr_cropped',output_filename), hr_cropped)
         cv2.imwrite(output_path, lr_image)
 
 
 if __name__ == "__main__":
-    
+    create_lr_dataset()
     print("Hello use any function you would want to use")
     # Do whatever you want 
 

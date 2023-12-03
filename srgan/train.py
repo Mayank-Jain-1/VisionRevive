@@ -8,9 +8,11 @@ from DataLoader import MyImageFolder
 import config
 from Srgan import Generator, Discriminator
 from VGGLoss import VGGLoss
+import utils
+import time
 
 def main():
-  dataset = MyImageFolder('./Dataset/DIV2K_train_HR')
+  dataset = MyImageFolder('.\Dataset\DIV2K_train_hr', '.\Dataset\DIV2K_train_lr')
   loader = DataLoader(
       dataset, 
       batch_size=config.BATCH_SIZE,
@@ -18,20 +20,62 @@ def main():
       pin_memory=True,
       num_workers=config.NUM_WORKERS,
   )
+  
+  torch.manual_seed(42)
 
   generator = Generator(num_channels=config.NUM_CHANNELS,
                   num_blocks=config.NUM_BLOCKS).to(config.DEVICE)
-  discriminator = Discriminator().to(config.DEVICE)
+  # discriminator = Discriminator().to(config.DEVICE)
+  # print(generator.state_dict()['initial.cnn.weight'][0][0][0])
 
-  gen_opt = torch.optim.Adam(generator.parameters(), lr=config.GEN_LR, betas=(0.9, 0.0999))
-
-  disc_opt = torch.optim.Adam(discriminator.parameters(), lr=config.DISC_LR, betas=(0.9, 0.0999))
+  gen_opt = torch.optim.Adam(generator.parameters(), lr=config.LEARNING_RATE, betas=(0.9, 0.0999))
+  # disc_opt = torch.optim.Adam(discriminator.parameters(), lr=config.LEARNING_RATE, betas=(0.9, 0.0999))
 
   mse = nn.MSELoss()
-  bce = nn.BCEWithLogitsLoss()
+  # bce = nn.BCEWithLogitsLoss()
   # VGGLoss = VGGLoss()
+  if config.LOAD == True:
+    utils.load_checkpoint("./models/gen_chk/latest_gen.pth.tar",generator, gen_opt, config.LEARNING_RATE)
 
-  train_loop(loader,generator, discriminator, mse, bce, gen_opt, disc_opt)
+  for epoch in range(1,config.EPOCHS+1):
+    train_with_mse(loader, generator, mse, gen_opt, epoch)
+
+
+def train_with_mse(loader, generator, mse, gen_opt, epoch):
+  loop = tqdm(loader, leave=True)
+  scaler = torch.cuda.amp.GradScaler()
+
+
+  for idx,(hr_img, lr_img) in enumerate(loop):
+    start = time.time()
+
+    hr_img = hr_img.to(config.DEVICE)
+    lr_img = lr_img.to(config.DEVICE)
+
+    # Creating the Output 4x Higher res image
+    with torch.cuda.amp.autocast():
+      generated = generator(lr_img)
+      generated = torch.clamp(generator(lr_img), 0, 1)
+      l2_loss = mse(generated, hr_img)
+    # Generator Optimization 
+    gen_opt.zero_grad()
+    
+    l2_loss.backward()
+    scaler.step(gen_opt)
+    scaler.update()
+    torch.cuda.empty_cache()
+
+    end = time.time()
+
+    print(f"Batch Time  = {end - start} s")
+
+    save_idx = 5
+    if idx%5 == 0:
+      with torch.inference_mode():
+        cv2.imwrite(f"./Training_Results/Generated/{epoch}_epoch_{idx}_batch_res.png", generated[0].permute((1,2,0)).to('cpu').numpy()*255)
+        cv2.imwrite(f"./Training_Results/Truth/{epoch}_epoch_{idx}_batch_truth.png", hr_img[0].permute((1,2,0)).to('cpu').numpy())
+
+        utils.save_checkpoint(generator, gen_opt, f"{config.GEN_CHK}/mse_{epoch}_epoch_{idx//save_idx}_gen.pth.tar")
 
 
 def train_with_gan_vgg(loader, generator, discriminator,mse, bce, gen_opt, disc_opt, VGGLoss):
@@ -66,7 +110,6 @@ def train_with_gan_vgg(loader, generator, discriminator,mse, bce, gen_opt, disc_
     # Generator Optimization 
 
     disc_fake= discriminator(generated)
-    l2_loss = mse(generated, hr_img)
     adversarial_loss = 1e-3 * bce(disc_fake, torch.ones_like(disc_fake))
     vggloss = 0.006 * VGGLoss(generated, hr_img)
     total_gen_loss = vggloss + adversarial_loss 
@@ -81,27 +124,6 @@ def train_with_gan_vgg(loader, generator, discriminator,mse, bce, gen_opt, disc_
 
     x = input("------------------------>")
 
-def train_with_mse(loader, generator, discriminator,mse, bce, gen_opt, disc_opt, VGGLoss):
-  loop = tqdm(loader, leave=True)
-
-  for idx,(hr_img, lr_img) in enumerate(loop):
-    hr_img = hr_img.to(config.DEVICE)
-    lr_img = lr_img.to(config.DEVICE)
-
-    # Creating the Output 4x Higher res image
-    generated = generator(lr_img)
-
-    # Generator Optimization 
-    l2_loss = mse(generated, hr_img)
-    total_gen_loss = l2_loss 
-
-    gen_opt.zero_grad()
-    total_gen_loss.backward()
-    gen_opt.step()
-
     
-
-
-
 if __name__ == '__main__':
   main()

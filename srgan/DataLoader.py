@@ -6,29 +6,32 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 
 class MyImageFolder(Dataset):
-    def __init__(self, root_dir):
+    def __init__(self, hr_folder, lr_folder):
         super(MyImageFolder, self).__init__()
         self.data = []
-        self.root_dir = root_dir
-        self.images_names = os.listdir(root_dir) 
+        self.root_dir = hr_folder
+        self.images_names = os.listdir(hr_folder) 
 
         for name in self.images_names:
-            files = os.path.join(root_dir, name)
-            self.data.append(files)
+            hr_path = os.path.join(hr_folder, name)
+            lr_path = os.path.join(lr_folder, name)
+            self.data.append((hr_path, lr_path))
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        image = np.array(cv2.imread(self.data[index]))
-        low_res = torch.tensor(DataCreator.createLrImage(image=image, mosaic_intensity=5, noise_intensity=0.35, cloudiness=0.4)).type(torch.float32).permute((2,0,1))
-        high_res = torch.tensor(DataCreator.center_crop(image=image)).type(torch.float32).permute((2,0,1))
-        return high_res, low_res
+        hr_img = cv2.imread(self.data[index][0])
+        lr_img = cv2.imread(self.data[index][1])
+        hr_img = torch.tensor(hr_img).type(torch.float32).permute((2,0,1))/255
+        lr_img = torch.tensor(lr_img).type(torch.float32).permute((2,0,1))/255
+        return hr_img, lr_img
     
 
 def test():
-    folder = ".\Dataset\DIV2K_train_HR"
-    loader = MyImageFolder(folder)
+    hr_folder = ".\Dataset\DIV2K_train_hr"
+    lr_folder = ".\Dataset\DIV2K_train_lr"
+    loader = MyImageFolder(hr_folder, lr_folder)
     for i in range(5):
         high_res, low_res = loader.__getitem__(i)
         cv2.imwrite(f"./Dataset/TrainingSamples/{i}testhr.png", high_res)
