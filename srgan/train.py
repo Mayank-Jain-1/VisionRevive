@@ -35,9 +35,15 @@ def main():
   # bce = nn.BCEWithLogitsLoss()
   # VGGLoss = VGGLoss()
   if config.LOAD == True:
-    utils.load_checkpoint("./models/gen_chk/latest_gen.pth.tar",generator, gen_opt, config.LEARNING_RATE)
+    utils.load_checkpoint("./models/gen_chk/mse_6_epoch_gen.pth.tar",generator, gen_opt, config.LEARNING_RATE)
 
-  for epoch in range(0,config.EPOCHS+1):
+  # for name,params in generator.named_parameters():
+  #   print("Generator :- min : ",name, torch.min(params))
+  #   print("Generator :- max : ",name, torch.max(params))
+    # print("Generator :- isinf : ",name,torch.any(torch.isinf(params)).item())
+    # print("Generator :- isNaN : ",name,torch.any(torch.isnan(params)).item())
+
+  for epoch in range(6,config.EPOCHS+1):
     train_with_mse(loader, generator, mse, gen_opt, epoch)
 
 

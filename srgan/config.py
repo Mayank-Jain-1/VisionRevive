@@ -24,5 +24,5 @@ DISC_CHK = './models/disc_chk'
 
 
 EPOCHS = 100
-LEARNING_RATE = 1e-4
-LOAD = False
+LEARNING_RATE = 1e-5
+LOAD = True
