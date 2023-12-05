@@ -35,7 +35,7 @@ def main():
   # bce = nn.BCEWithLogitsLoss()
   # VGGLoss = VGGLoss()
   if config.LOAD == True:
-    utils.load_checkpoint("./models/gen_chk/mse_6_epoch_gen.pth.tar",generator, gen_opt, config.LEARNING_RATE)
+    utils.load_checkpoint(os.path.join(config.GEN_CHK,config.CHEKPOINT_GEN),generator, gen_opt, config.LEARNING_RATE)
 
   # for name,params in generator.named_parameters():
   #   print("Generator :- min : ",name, torch.min(params))
@@ -43,7 +43,7 @@ def main():
     # print("Generator :- isinf : ",name,torch.any(torch.isinf(params)).item())
     # print("Generator :- isNaN : ",name,torch.any(torch.isnan(params)).item())
 
-  for epoch in range(6,config.EPOCHS+1):
+  for epoch in range(40,config.EPOCHS+1):
     train_with_mse(loader, generator, mse, gen_opt, epoch)
 
 
@@ -81,8 +81,10 @@ def train_with_mse(loader, generator, mse, gen_opt, epoch):
     if idx%save_idx == 0:
       with torch.inference_mode():
         print(generated[0][0][:10])
-        cv2.imwrite(f"./Training_Results/Generated/{epoch}_epoch_{idx}_batch_res.png", generated[0].permute((1,2,0)).to('cpu').numpy()*255)
-        cv2.imwrite(f"./Training_Results/Truth/{epoch}_epoch_{idx}_batch_truth.png", hr_img[0].permute((1,2,0)).to('cpu').numpy()*255)
+        # cv2.imwrite(f"./Training_Results/Generated/{epoch}_epoch_{idx}_batch_res.png", generated[0].permute((1,2,0)).to('cpu').numpy()*255)
+        # cv2.imwrite(f"./Training_Results/Truth/{epoch}_epoch_{idx}_batch_truth.png", hr_img[0].permute((1,2,0)).to('cpu').numpy()*255)
+        cv2.imwrite(f"./Training_Results/Generated/res.png", generated[0].permute((1,2,0)).to('cpu').numpy()*255)
+        cv2.imwrite(f"./Training_Results/Truth/truth.png", hr_img[0].permute((1,2,0)).to('cpu').numpy()*255)
 
       utils.save_checkpoint(generator, gen_opt, f"{config.GEN_CHK}/mse_{epoch}_epoch_{idx//save_idx}_gen.pth.tar")
 
