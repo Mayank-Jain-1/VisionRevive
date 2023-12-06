@@ -43,7 +43,7 @@ def main():
     # print("Generator :- isinf : ",name,torch.any(torch.isinf(params)).item())
     # print("Generator :- isNaN : ",name,torch.any(torch.isnan(params)).item())
 
-  for epoch in range(40,config.EPOCHS+1):
+  for epoch in range(51,config.EPOCHS+1):
     train_with_mse(loader, generator, mse, gen_opt, epoch)
 
 
@@ -53,7 +53,6 @@ def train_with_mse(loader, generator, mse, gen_opt, epoch):
 
 
   for idx,(hr_img, lr_img) in enumerate(loop):
-    start = time.time()
 
     hr_img = hr_img.to(config.DEVICE)
     lr_img = lr_img.to(config.DEVICE)
@@ -74,8 +73,7 @@ def train_with_mse(loader, generator, mse, gen_opt, epoch):
     scaler.update()
     torch.cuda.empty_cache()
 
-    end = time.time()
-    print(f"Batch Time  = {end - start} s")
+    print(f"\nLoss={l2_loss}")
 
     save_idx = 3
     if idx%save_idx == 0:
