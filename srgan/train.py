@@ -43,7 +43,7 @@ def main():
     # print("Generator :- isinf : ",name,torch.any(torch.isinf(params)).item())
     # print("Generator :- isNaN : ",name,torch.any(torch.isnan(params)).item())
 
-  for epoch in range(51,config.EPOCHS+1):
+  for epoch in range(70,config.EPOCHS+1):
     train_with_mse(loader, generator, mse, gen_opt, epoch)
 
 

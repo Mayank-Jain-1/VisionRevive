@@ -17,7 +17,7 @@ NUM_BLOCKS = 16
 GEN_CHK = './models/gen_chk'
 DISC_CHK = './models/disc_chk'
 
-CHEKPOINT_GEN = 'mse_51_epoch_0_gen.pth.tar'
+CHEKPOINT_GEN = 'mse_70_epoch_0_gen.pth.tar'
 
 EPOCHS = 100
 LEARNING_RATE = 1e-5
